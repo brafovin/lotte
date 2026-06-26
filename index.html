@@ -3,416 +3,302 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hello Kitty Anziehspiel</title>
+<title>Prinzessin Pegasus – Sprungspiel</title>
 <style>
-  :root {
-    --pink: #ff8fb1;
-    --pink-dark: #ff5d8f;
-    --pink-light: #ffd9e6;
-    --cream: #fff5f8;
-  }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
+  html, body {
+    margin: 0; height: 100%;
     font-family: "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
-    background: linear-gradient(135deg, #ffe3ee 0%, #ffd0e4 50%, #ffc2dd 100%);
-    color: #6b2d44;
-    min-height: 100vh;
+    background: linear-gradient(180deg, #fbd3ec 0%, #f7b8df 100%);
+    color: #5a2a47;
+    overflow: hidden;
+  }
+  .wrap {
+    display: flex; flex-direction: column; align-items: center;
+    height: 100%; justify-content: center; gap: 10px; padding: 10px;
   }
   h1 {
-    text-align: center;
-    margin: 18px 0 4px;
-    color: var(--pink-dark);
-    font-size: clamp(26px, 5vw, 42px);
-    text-shadow: 2px 2px 0 #fff;
-  }
-  .subtitle {
-    text-align: center;
-    margin: 0 0 14px;
-    font-size: 15px;
-    color: #a04763;
-  }
-  .game {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-    align-items: flex-start;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 0 16px 40px;
+    margin: 0; color: #d63384; text-shadow: 2px 2px 0 #fff;
+    font-size: clamp(20px, 4vw, 32px); text-align: center;
   }
   .stage {
-    background: var(--cream);
+    position: relative;
     border: 6px solid #fff;
-    border-radius: 24px;
-    box-shadow: 0 12px 30px rgba(255, 93, 143, 0.25);
-    padding: 14px;
-    position: sticky;
-    top: 14px;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(214,51,132,0.3);
+    overflow: hidden;
+    touch-action: manipulation;
   }
-  #scene {
-    width: 320px;
-    height: 360px;
-    display: block;
-    border-radius: 18px;
+  canvas { display: block; }
+  .hud {
+    position: absolute; top: 12px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between;
+    font-weight: bold; font-size: 18px; color: #6b2d56;
+    text-shadow: 0 1px 2px #fff; pointer-events: none;
   }
-  .panel {
-    flex: 1;
-    min-width: 300px;
-    max-width: 560px;
+  .overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.78); gap: 12px; text-align: center; padding: 20px;
   }
-  .tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
+  .overlay h2 { margin: 0; color: #d63384; font-size: clamp(22px, 5vw, 36px); }
+  .overlay p { margin: 0; font-size: 16px; max-width: 360px; }
+  .btn {
+    border: none; background: #d63384; color: #fff; font-weight: bold;
+    font-size: 18px; padding: 12px 28px; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 5px 14px rgba(214,51,132,0.4); transition: transform .1s;
   }
-  .tab {
-    border: none;
-    background: #fff;
-    color: var(--pink-dark);
-    padding: 9px 16px;
-    border-radius: 999px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 3px 8px rgba(255, 93, 143, 0.18);
-    transition: transform .1s, background .15s;
-  }
-  .tab:hover { transform: translateY(-2px); }
-  .tab.active { background: var(--pink-dark); color: #fff; }
-  .options {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-    gap: 10px;
-    background: rgba(255,255,255,0.55);
-    padding: 12px;
-    border-radius: 18px;
-  }
-  .option {
-    background: #fff;
-    border: 3px solid transparent;
-    border-radius: 14px;
-    padding: 6px;
-    cursor: pointer;
-    text-align: center;
-    transition: transform .1s, border-color .15s;
-  }
-  .option:hover { transform: translateY(-3px); }
-  .option.selected { border-color: var(--pink-dark); background: var(--pink-light); }
-  .option svg { width: 56px; height: 56px; display: block; margin: 0 auto; }
-  .option span { font-size: 11px; display: block; margin-top: 2px; }
-  .actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-  }
-  .actions button {
-    flex: 1;
-    min-width: 120px;
-    border: none;
-    padding: 12px;
-    border-radius: 999px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-    color: #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-    transition: transform .1s;
-  }
-  .actions button:hover { transform: translateY(-2px); }
-  .btn-random { background: var(--pink-dark); }
-  .btn-reset { background: #b58aa8; }
-  .btn-save { background: #7ec8a8; }
-  footer {
-    text-align: center;
-    font-size: 12px;
-    color: #a04763;
-    padding: 0 16px 24px;
-  }
+  .btn:hover { transform: translateY(-2px); }
+  .hidden { display: none !important; }
+  .hint { font-size: 13px; color: #8a4d74; }
 </style>
 </head>
 <body>
-  <h1>🎀 Hello Kitty Anziehspiel 🎀</h1>
-  <p class="subtitle">Klicke auf die Sachen, um Hello Kitty anzuziehen!</p>
-
-  <div class="game">
-    <div class="stage">
-      <svg id="scene" viewBox="0 0 320 360" xmlns="http://www.w3.org/2000/svg">
-        <!-- Hintergrund -->
-        <rect id="bg" x="0" y="0" width="320" height="360" fill="#ffe3ee"/>
-        <g id="bgDecor"></g>
-
-        <!-- Körper / Outfit -->
-        <g id="layerOutfit"></g>
-
-        <!-- Kopf -->
-        <g id="head" transform="translate(160 150)">
-          <!-- Ohren -->
-          <path d="M-78 -38 L-40 -78 L-20 -42 Z" fill="#ffffff" stroke="#e8a0bb" stroke-width="3"/>
-          <path d="M78 -38 L40 -78 L20 -42 Z" fill="#ffffff" stroke="#e8a0bb" stroke-width="3"/>
-          <!-- Gesicht -->
-          <ellipse cx="0" cy="0" rx="84" ry="66" fill="#ffffff" stroke="#e8a0bb" stroke-width="3"/>
-          <!-- Augen -->
-          <ellipse cx="-30" cy="2" rx="7" ry="11" fill="#3a3a3a"/>
-          <ellipse cx="30" cy="2" rx="7" ry="11" fill="#3a3a3a"/>
-          <!-- Nase -->
-          <ellipse cx="0" cy="20" rx="9" ry="7" fill="#f6b73c"/>
-          <!-- Schnurrhaare -->
-          <g stroke="#cfcfcf" stroke-width="2.5" stroke-linecap="round">
-            <line x1="-44" y1="6" x2="-78" y2="-2"/>
-            <line x1="-46" y1="18" x2="-80" y2="20"/>
-            <line x1="-44" y1="30" x2="-76" y2="40"/>
-            <line x1="44" y1="6" x2="78" y2="-2"/>
-            <line x1="46" y1="18" x2="80" y2="20"/>
-            <line x1="44" y1="30" x2="76" y2="40"/>
-          </g>
-          <!-- Accessoires am Kopf -->
-          <g id="layerBow"></g>
-          <g id="layerHat"></g>
-          <g id="layerGlasses"></g>
-        </g>
-      </svg>
+<div class="wrap">
+  <h1>🦄 Prinzessin Pegasus – Spring über die Hindernisse! 🌸</h1>
+  <div class="stage" id="stage">
+    <canvas id="game" width="800" height="400"></canvas>
+    <div class="hud">
+      <div>Punkte: <span id="score">0</span></div>
+      <div>Rekord: <span id="best">0</span></div>
     </div>
-
-    <div class="panel">
-      <div class="tabs" id="tabs"></div>
-      <div class="options" id="options"></div>
-      <div class="actions">
-        <button class="btn-random" onclick="randomize()">🎲 Zufall</button>
-        <button class="btn-reset" onclick="resetAll()">↺ Zurücksetzen</button>
-        <button class="btn-save" onclick="saveImage()">💾 Bild speichern</button>
-      </div>
+    <div class="overlay" id="overlay">
+      <h2 id="ovTitle">Bereit zum Fliegen?</h2>
+      <p id="ovText">Tippe, klicke oder drücke die <b>Leertaste</b>, damit Pegasus springt.
+         Weiche den Hecken und Toren aus und sammle Punkte!</p>
+      <button class="btn" id="startBtn">▶ Los geht's!</button>
+      <div class="hint">Leertaste / Klick / Tippen = Springen</div>
     </div>
   </div>
-
-  <footer>Mit 💖 gemacht – klick dich durch und gestalte deine eigene Hello Kitty!</footer>
+</div>
 
 <script>
-/* ---------- Kategorien & Items ----------
-   Jedes Item liefert SVG, das in seine Ziel-Ebene gerendert wird.
-   thumb = kleine Vorschau fürs Menü, draw = großes SVG für die Bühne. */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const GROUND = H - 70;
 
-const categories = {
-  bow: {
-    label: "🎀 Schleife",
-    target: "layerBow",
-    items: {
-      none:  { name: "Keine", thumb: emptyThumb(), draw: "" },
-      red:   { name: "Rot",   thumb: bowThumb("#ff4d6d"), draw: bowSvg("#ff4d6d") },
-      blue:  { name: "Blau",  thumb: bowThumb("#4d8bff"), draw: bowSvg("#4d8bff") },
-      gold:  { name: "Gold",  thumb: bowThumb("#ffcb3d"), draw: bowSvg("#ffcb3d") },
-      polka: { name: "Punkte",thumb: bowThumb("#ff7bac", true), draw: bowSvg("#ff7bac", true) },
-    }
-  },
-  outfit: {
-    label: "👗 Outfit",
-    target: "layerOutfit",
-    items: {
-      none:    { name: "Keins",  thumb: emptyThumb(), draw: "" },
-      dressPink:{ name: "Kleid", thumb: dressThumb("#ff6fa5"), draw: dressSvg("#ff6fa5") },
-      dressMint:{ name: "Kleid", thumb: dressThumb("#7ed7b8"), draw: dressSvg("#7ed7b8") },
-      overall: { name: "Latzhose", thumb: overallThumb("#5b8def"), draw: overallSvg("#5b8def") },
-      shirt:   { name: "Shirt",  thumb: shirtThumb("#ffd24d"), draw: shirtSvg("#ffd24d") },
-    }
-  },
-  hat: {
-    label: "👒 Hut",
-    target: "layerHat",
-    items: {
-      none:  { name: "Keiner", thumb: emptyThumb(), draw: "" },
-      crown: { name: "Krone",  thumb: crownThumb(), draw: crownSvg() },
-      cap:   { name: "Mütze",  thumb: capThumb("#ff5d8f"), draw: capSvg("#ff5d8f") },
-      flower:{ name: "Blume",  thumb: flowerHatThumb(), draw: flowerHatSvg() },
-    }
-  },
-  glasses: {
-    label: "🕶️ Brille",
-    target: "layerGlasses",
-    items: {
-      none:   { name: "Keine", thumb: emptyThumb(), draw: "" },
-      sun:    { name: "Sonne", thumb: glassesThumb("#333"), draw: glassesSvg("#333") },
-      heart:  { name: "Herz",  thumb: heartGlassesThumb(), draw: heartGlassesSvg() },
-    }
-  },
-  bg: {
-    label: "🌈 Hintergrund",
-    target: "bg",
-    items: {
-      pink:  { name: "Rosa",   thumb: bgThumb("#ffe3ee"), color: "#ffe3ee", decor: "" },
-      sky:   { name: "Himmel", thumb: bgThumb("#cdeafe"), color: "#cdeafe", decor: cloudsDecor() },
-      mint:  { name: "Minze",  thumb: bgThumb("#d6f5e6"), color: "#d6f5e6", decor: "" },
-      stars: { name: "Sterne", thumb: bgThumb("#2b2b5e"), color: "#2b2b5e", decor: starsDecor() },
-    }
-  }
-};
+const scoreEl = document.getElementById("score");
+const bestEl  = document.getElementById("best");
+const overlay = document.getElementById("overlay");
+const ovTitle = document.getElementById("ovTitle");
+const ovText  = document.getElementById("ovText");
+const startBtn= document.getElementById("startBtn");
 
-/* ---------- SVG Bausteine ---------- */
-function emptyThumb(){ return '<svg viewBox="0 0 40 40"><line x1="8" y1="8" x2="32" y2="32" stroke="#ccc" stroke-width="3"/><line x1="32" y1="8" x2="8" y2="32" stroke="#ccc" stroke-width="3"/></svg>'; }
+let best = parseInt(localStorage.getItem("pegasusBest") || "0", 10);
+bestEl.textContent = best;
 
-function bowSvg(c, dots){
-  const pat = dots ? '<circle cx="-22" cy="-44" r="3" fill="#fff"/><circle cx="22" cy="-44" r="3" fill="#fff"/><circle cx="0" cy="-50" r="3" fill="#fff"/>' : '';
-  return `<g transform="translate(0 -44)">
-    <path d="M0 0 L-34 -16 L-34 16 Z" fill="${c}" stroke="#c23" stroke-width="2"/>
-    <path d="M0 0 L34 -16 L34 16 Z" fill="${c}" stroke="#c23" stroke-width="2"/>
-    <circle cx="0" cy="0" r="9" fill="${c}" stroke="#c23" stroke-width="2"/>
-    ${dots?'<circle cx="-20" cy="0" r="3" fill="#fff"/><circle cx="20" cy="0" r="3" fill="#fff"/>':''}
-  </g>`;
+/* ---------- Pegasus + Prinzessin als SVG-Bild ---------- */
+const heroSVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="0 0 200 170">
+  <!-- Flügel hinten (hellpink) -->
+  <g id="wing">
+    <path d="M70 70 Q20 30 8 70 Q40 64 50 90 Q22 78 18 104 Q52 92 62 110 Q44 110 40 130 Q78 104 92 86 Z"
+          fill="#ffb3d9" stroke="#ff86c2" stroke-width="2"/>
+  </g>
+  <!-- Pferdekörper (weiß) -->
+  <ellipse cx="105" cy="105" rx="62" ry="34" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <!-- Beine -->
+  <g fill="#ffffff" stroke="#e9d9e6" stroke-width="2">
+    <rect x="62" y="128" width="13" height="34" rx="5"/>
+    <rect x="88" y="132" width="13" height="34" rx="5"/>
+    <rect x="120" y="132" width="13" height="34" rx="5"/>
+    <rect x="146" y="128" width="13" height="34" rx="5"/>
+  </g>
+  <!-- Hals + Kopf -->
+  <path d="M150 92 Q176 78 174 56 Q172 40 158 40 Q150 56 148 70 Q140 80 138 96 Z" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <ellipse cx="166" cy="46" rx="14" ry="12" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <path d="M176 40 L184 30 L182 44 Z" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <circle cx="170" cy="44" r="2.4" fill="#5a2a47"/>
+  <!-- Mähne (hellpink) -->
+  <path d="M150 44 Q156 30 150 22 Q160 30 158 44 Q166 32 162 24 Q172 36 166 50 Q158 58 150 62 Z" fill="#ffb3d9"/>
+  <!-- Schweif (hellpink) -->
+  <path d="M44 96 Q14 100 10 132 Q30 116 40 124 Q26 134 30 150 Q46 126 56 120 Z" fill="#ffb3d9"/>
+  <!-- Schwarzer Sattel -->
+  <path d="M82 80 Q105 66 128 80 L124 96 Q105 88 86 96 Z" fill="#1c1c1c"/>
+  <rect x="80" y="92" width="50" height="8" rx="3" fill="#1c1c1c"/>
+  <path d="M84 80 Q83 70 90 70" fill="none" stroke="#1c1c1c" stroke-width="4"/>
+
+  <!-- Prinzessin -->
+  <g>
+    <!-- hellblaues Kleid -->
+    <path d="M86 86 Q105 70 124 86 L132 116 Q105 126 78 116 Z" fill="#aee0ff" stroke="#7fc7ef" stroke-width="2"/>
+    <!-- Oberkörper -->
+    <path d="M96 70 Q105 60 114 70 L112 88 Q105 92 98 88 Z" fill="#bfe7ff" stroke="#7fc7ef" stroke-width="1.5"/>
+    <!-- langes, leicht gewelltes blondes Haar -->
+    <path d="M93 44 Q86 60 90 78 Q84 88 92 96 Q96 86 98 76 Q96 60 100 50 Z" fill="#ffe08a" stroke="#f4c95b" stroke-width="1.5"/>
+    <path d="M117 44 Q124 60 120 78 Q126 88 118 96 Q114 86 112 76 Q114 60 110 50 Z" fill="#ffe08a" stroke="#f4c95b" stroke-width="1.5"/>
+    <!-- Kopf -->
+    <circle cx="105" cy="48" r="13" fill="#ffe2c4" stroke="#f3c79e" stroke-width="1.5"/>
+    <!-- Pony / Haaransatz -->
+    <path d="M92 46 Q96 34 105 34 Q114 34 118 46 Q112 40 105 40 Q98 40 92 46 Z" fill="#ffe08a"/>
+    <!-- Augen + Lächeln -->
+    <circle cx="100" cy="48" r="1.8" fill="#5a3a2a"/>
+    <circle cx="110" cy="48" r="1.8" fill="#5a3a2a"/>
+    <path d="M101 54 Q105 57 109 54" fill="none" stroke="#c97b6b" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- kleine Krone -->
+    <path d="M97 34 L100 28 L105 33 L110 28 L113 34 Z" fill="#ffd54a" stroke="#e0a800" stroke-width="1"/>
+  </g>
+</svg>`;
+
+const heroImg = new Image();
+heroImg.src = "data:image/svg+xml;utf8," + encodeURIComponent(heroSVG);
+
+/* ---------- Spielzustand ---------- */
+const hero = { x: 120, y: GROUND, w: 150, h: 128, vy: 0, jumping: false };
+const GRAVITY = 0.7;
+const JUMP_V = -14;
+let obstacles = [];
+let clouds = [];
+let score = 0, speed = 6, frame = 0, running = false, gameOver = false;
+
+function reset(){
+  hero.y = GROUND; hero.vy = 0; hero.jumping = false;
+  obstacles = []; score = 0; speed = 6; frame = 0; gameOver = false;
+  clouds = [];
+  for(let i=0;i<4;i++) clouds.push({ x: Math.random()*W, y: 30+Math.random()*120, s: 0.4+Math.random()*0.6, r: 24+Math.random()*20 });
 }
-function bowThumb(c, dots){ return `<svg viewBox="-40 -60 80 50">${bowSvg(c,dots)}</svg>`; }
 
-function dressSvg(c){
-  return `<g transform="translate(160 210)">
-    <path d="M-46 0 Q0 -22 46 0 L70 110 Q0 135 -70 110 Z" fill="${c}" stroke="rgba(0,0,0,0.12)" stroke-width="2"/>
-    <circle cx="0" cy="34" r="6" fill="#fff"/><circle cx="-24" cy="70" r="6" fill="#fff"/><circle cx="24" cy="70" r="6" fill="#fff"/>
-  </g>`;
-}
-function dressThumb(c){ return `<svg viewBox="-70 0 140 140"><g transform="translate(0 5)"><path d="M-46 0 Q0 -22 46 0 L70 110 Q0 135 -70 110 Z" fill="${c}"/></g></svg>`; }
-
-function overallSvg(c){
-  return `<g transform="translate(160 210)">
-    <path d="M-60 20 L60 20 L70 120 Q0 140 -70 120 Z" fill="${c}"/>
-    <rect x="-40" y="-10" width="80" height="50" rx="8" fill="${c}"/>
-    <rect x="-44" y="-26" width="14" height="40" rx="6" fill="${c}"/>
-    <rect x="30" y="-26" width="14" height="40" rx="6" fill="${c}"/>
-    <circle cx="-20" cy="14" r="4" fill="#ffd24d"/><circle cx="20" cy="14" r="4" fill="#ffd24d"/>
-  </g>`;
-}
-function overallThumb(c){ return `<svg viewBox="-70 -30 140 170"><g transform="translate(0 0)"><path d="M-60 20 L60 20 L70 120 Q0 140 -70 120 Z" fill="${c}"/><rect x="-40" y="-10" width="80" height="50" rx="8" fill="${c}"/></g></svg>`; }
-
-function shirtSvg(c){
-  return `<g transform="translate(160 210)">
-    <path d="M-58 18 L-40 0 Q0 -16 40 0 L58 18 L40 36 L40 110 Q0 124 -40 110 L-40 36 Z" fill="${c}"/>
-    <text x="0" y="78" font-size="34" text-anchor="middle">⭐</text>
-  </g>`;
-}
-function shirtThumb(c){ return `<svg viewBox="-60 -20 120 140"><path d="M-58 18 L-40 0 Q0 -16 40 0 L58 18 L40 36 L40 110 Q0 124 -40 110 L-40 36 Z" fill="${c}"/></svg>`; }
-
-function crownSvg(){
-  return `<g transform="translate(0 -58)">
-    <path d="M-40 10 L-40 -16 L-20 4 L0 -22 L20 4 L40 -16 L40 10 Z" fill="#ffcb3d" stroke="#e0a800" stroke-width="2"/>
-    <circle cx="0" cy="-20" r="4" fill="#ff4d6d"/><circle cx="-20" cy="0" r="3" fill="#4d8bff"/><circle cx="20" cy="0" r="3" fill="#4d8bff"/>
-  </g>`;
-}
-function crownThumb(){ return `<svg viewBox="-44 -30 88 50">${crownSvg().replace('translate(0 -58)','translate(0 0)')}</svg>`; }
-
-function capSvg(c){
-  return `<g transform="translate(0 -56)">
-    <path d="M-44 6 Q0 -40 44 6 Z" fill="${c}"/>
-    <rect x="-46" y="2" width="92" height="10" rx="5" fill="#fff"/>
-    <circle cx="0" cy="-30" r="7" fill="#fff"/>
-  </g>`;
-}
-function capThumb(c){ return `<svg viewBox="-50 -40 100 60">${capSvg(c).replace('translate(0 -56)','translate(0 0)')}</svg>`; }
-
-function flowerHatSvg(){
-  let petals = '';
-  for(let i=0;i<6;i++){ const a=i*60*Math.PI/180; petals+=`<circle cx="${Math.cos(a)*14}" cy="${-54+Math.sin(a)*14}" r="9" fill="#ff7bac"/>`; }
-  return `<g>${petals}<circle cx="0" cy="-54" r="8" fill="#ffd24d"/></g>`;
-}
-function flowerHatThumb(){ return `<svg viewBox="-30 -30 60 60">${flowerHatSvg().replace(/-54/g,'0')}</svg>`; }
-
-function glassesSvg(c){
-  return `<g transform="translate(0 0)">
-    <rect x="-44" y="-8" width="34" height="22" rx="8" fill="${c}" opacity="0.85"/>
-    <rect x="10" y="-8" width="34" height="22" rx="8" fill="${c}" opacity="0.85"/>
-    <line x1="-10" y1="2" x2="10" y2="2" stroke="${c}" stroke-width="4"/>
-  </g>`;
-}
-function glassesThumb(c){ return `<svg viewBox="-50 -16 100 40">${glassesSvg(c)}</svg>`; }
-
-function heartGlassesSvg(){
-  const h = (x)=>`<path transform="translate(${x} 2) scale(0.9)" d="M0 8 C-14 -8 -28 4 -16 14 L0 26 L16 14 C28 4 14 -8 0 8 Z" fill="#ff4d6d" opacity="0.9"/>`;
-  return `<g>${h(-26)}${h(26)}<line x1="-10" y1="6" x2="10" y2="6" stroke="#ff4d6d" stroke-width="4"/></g>`;
-}
-function heartGlassesThumb(){ return `<svg viewBox="-50 -10 100 50">${heartGlassesSvg()}</svg>`; }
-
-function bgThumb(c){ return `<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="6" fill="${c}"/></svg>`; }
-function cloudsDecor(){ return `<g fill="#fff" opacity="0.9"><ellipse cx="60" cy="60" rx="34" ry="18"/><ellipse cx="250" cy="90" rx="40" ry="20"/><ellipse cx="280" cy="300" rx="30" ry="16"/></g>`; }
-function starsDecor(){ let s=''; const pts=[[40,50],[120,30],[210,60],[290,40],[60,300],[260,310],[300,180],[30,180]]; pts.forEach(p=>s+=`<text x="${p[0]}" y="${p[1]}" font-size="20" fill="#fff">⭐</text>`); return s; }
-
-/* ---------- State & Rendering ---------- */
-const state = { bow:"red", outfit:"dressPink", hat:"none", glasses:"none", bg:"pink" };
-let activeTab = "bow";
-
-function render(){
-  for(const key in categories){
-    const cat = categories[key];
-    const item = cat.items[state[key]];
-    if(key === "bg"){
-      document.getElementById("bg").setAttribute("fill", item.color);
-      document.getElementById("bgDecor").innerHTML = item.decor || "";
-    } else {
-      document.getElementById(cat.target).innerHTML = item.draw || "";
-    }
+function jump(){
+  if(!running){ return; }
+  if(!hero.jumping){
+    hero.vy = JUMP_V;
+    hero.jumping = true;
   }
 }
 
-function renderTabs(){
-  const el = document.getElementById("tabs");
-  el.innerHTML = "";
-  for(const key in categories){
-    const b = document.createElement("button");
-    b.className = "tab" + (key===activeTab?" active":"");
-    b.textContent = categories[key].label;
-    b.onclick = ()=>{ activeTab = key; renderTabs(); renderOptions(); };
-    el.appendChild(b);
+function spawnObstacle(){
+  const types = [
+    { w: 34, h: 50, color: "#4caf6d", kind:"hedge" },   // Hecke
+    { w: 30, h: 78, color: "#4caf6d", kind:"tree" },     // hoher Busch
+    { w: 54, h: 60, color: "#c98a3a", kind:"gate" },     // Tor
+  ];
+  const t = types[Math.floor(Math.random()*types.length)];
+  obstacles.push({ x: W + 20, y: GROUND - t.h + 60, w: t.w, h: t.h, color: t.color, kind: t.kind, passed:false });
+}
+
+/* ---------- Zeichnen ---------- */
+function drawCloud(c){
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+  ctx.arc(c.x + c.r, c.y + 6, c.r*0.8, 0, Math.PI*2);
+  ctx.arc(c.x - c.r, c.y + 6, c.r*0.8, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawGround(){
+  ctx.fillStyle = "#8ed98a";
+  ctx.fillRect(0, GROUND + 50, W, H - GROUND);
+  ctx.fillStyle = "#7bc777";
+  for(let x = (-frame*speed) % 40; x < W; x += 40){
+    ctx.fillRect(x, GROUND + 50, 20, 8);
   }
 }
 
-function renderOptions(){
-  const el = document.getElementById("options");
-  el.innerHTML = "";
-  const cat = categories[activeTab];
-  for(const id in cat.items){
-    const item = cat.items[id];
-    const d = document.createElement("div");
-    d.className = "option" + (state[activeTab]===id?" selected":"");
-    d.innerHTML = item.thumb + `<span>${item.name}</span>`;
-    d.onclick = ()=>{ state[activeTab] = id; render(); renderOptions(); };
-    el.appendChild(d);
+function drawObstacle(o){
+  if(o.kind === "gate"){
+    ctx.fillStyle = "#b07636";
+    ctx.fillRect(o.x, o.y, 8, o.h);
+    ctx.fillRect(o.x + o.w - 8, o.y, 8, o.h);
+    ctx.fillRect(o.x, o.y, o.w, 10);
+    ctx.fillStyle = "#ffd54a";
+    ctx.fillRect(o.x + o.w/2 - 4, o.y, 8, 8);
+  } else {
+    // Busch / Hecke
+    ctx.fillStyle = o.color;
+    ctx.beginPath();
+    ctx.arc(o.x + o.w/2, o.y + 14, o.w/2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillRect(o.x, o.y + 10, o.w, o.h - 10);
+    ctx.fillStyle = "#3d9457";
+    ctx.fillRect(o.x + o.w/2 - 3, o.y + 20, 6, o.h - 20);
+    // Blümchen
+    ctx.fillStyle = "#ff7bbf";
+    ctx.beginPath(); ctx.arc(o.x + o.w*0.3, o.y + 14, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(o.x + o.w*0.7, o.y + 22, 3, 0, Math.PI*2); ctx.fill();
   }
 }
 
-function randomize(){
-  for(const key in categories){
-    const ids = Object.keys(categories[key].items);
-    state[key] = ids[Math.floor(Math.random()*ids.length)];
+function drawHero(){
+  const bob = hero.jumping ? 0 : Math.sin(frame*0.3)*3;
+  ctx.save();
+  ctx.translate(hero.x, hero.y - hero.h + bob);
+  if(heroImg.complete) ctx.drawImage(heroImg, 0, 0, hero.w, hero.h);
+  ctx.restore();
+}
+
+/* Trefferbox etwas kleiner als das Bild, fair fürs Spiel */
+function heroBox(){
+  return { x: hero.x + 30, y: hero.y - hero.h + 40, w: hero.w - 70, h: hero.h - 55 };
+}
+function hit(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/* ---------- Hauptschleife ---------- */
+function loop(){
+  if(!running) return;
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Wolken
+  clouds.forEach(c=>{
+    c.x -= c.s; if(c.x < -60){ c.x = W + 60; c.y = 30 + Math.random()*120; }
+    drawCloud(c);
+  });
+  drawGround();
+
+  // Physik Held
+  hero.vy += GRAVITY;
+  hero.y += hero.vy;
+  if(hero.y >= GROUND){ hero.y = GROUND; hero.vy = 0; hero.jumping = false; }
+
+  // Hindernisse
+  if(frame % Math.max(55, 90 - Math.floor(score/5)) === 0) spawnObstacle();
+  for(let i = obstacles.length - 1; i >= 0; i--){
+    const o = obstacles[i];
+    o.x -= speed;
+    drawObstacle(o);
+    if(!o.passed && o.x + o.w < hero.x){ o.passed = true; score++; scoreEl.textContent = score; speed += 0.12; }
+    if(hit(heroBox(), o)){ endGame(); }
+    if(o.x + o.w < -20) obstacles.splice(i, 1);
   }
-  render(); renderOptions();
+
+  drawHero();
+  requestAnimationFrame(loop);
 }
 
-function resetAll(){
-  Object.assign(state, { bow:"red", outfit:"dressPink", hat:"none", glasses:"none", bg:"pink" });
-  render(); renderOptions();
+function startGame(){
+  reset();
+  running = true;
+  overlay.classList.add("hidden");
+  requestAnimationFrame(loop);
 }
 
-function saveImage(){
-  const svg = document.getElementById("scene");
-  const data = new XMLSerializer().serializeToString(svg);
-  const img = new Image();
-  const svgBlob = new Blob([data], {type:"image/svg+xml;charset=utf-8"});
-  const url = URL.createObjectURL(svgBlob);
-  img.onload = ()=>{
-    const canvas = document.createElement("canvas");
-    canvas.width = 640; canvas.height = 720;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, 640, 720);
-    URL.revokeObjectURL(url);
-    const a = document.createElement("a");
-    a.download = "meine-hello-kitty.png";
-    a.href = canvas.toDataURL("image/png");
-    a.click();
-  };
-  img.src = url;
+function endGame(){
+  running = false; gameOver = true;
+  if(score > best){ best = score; localStorage.setItem("pegasusBest", best); bestEl.textContent = best; }
+  ovTitle.textContent = "🌟 Geschafft: " + score + " Punkte!";
+  ovText.innerHTML = (score >= best ? "Neuer Rekord! 🎉<br>" : "") + "Tippe oder drücke die Leertaste für eine neue Runde.";
+  startBtn.textContent = "↻ Nochmal spielen";
+  overlay.classList.remove("hidden");
 }
 
-/* ---------- Start ---------- */
-renderTabs();
-renderOptions();
-render();
+/* ---------- Steuerung ---------- */
+function handlePress(e){
+  if(e.type === "keydown" && e.code !== "Space" && e.code !== "ArrowUp") return;
+  if(e.type === "keydown") e.preventDefault();
+  if(!running){ startGame(); }
+  else { jump(); }
+}
+document.addEventListener("keydown", handlePress);
+document.getElementById("stage").addEventListener("mousedown", (e)=>{ if(e.target !== startBtn) handlePress(e); });
+document.getElementById("stage").addEventListener("touchstart", (e)=>{ e.preventDefault(); handlePress(e); }, {passive:false});
+startBtn.addEventListener("click", startGame);
+
+// Startbild zeichnen, sobald das Pferd geladen ist
+heroImg.onload = ()=>{ reset(); ctx.clearRect(0,0,W,H); clouds.forEach(drawCloud); drawGround(); drawHero(); };
 </script>
 </body>
 </html>
