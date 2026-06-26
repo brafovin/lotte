@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prinzessin Pegasus – Sprungspiel</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    font-family: "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(180deg, #fbd3ec 0%, #f7b8df 100%);
+    color: #5a2a47;
+    overflow: hidden;
+  }
+  .wrap {
+    display: flex; flex-direction: column; align-items: center;
+    height: 100%; justify-content: center; gap: 10px; padding: 10px;
+  }
+  h1 {
+    margin: 0; color: #d63384; text-shadow: 2px 2px 0 #fff;
+    font-size: clamp(20px, 4vw, 32px); text-align: center;
+  }
+  .stage {
+    position: relative;
+    border: 6px solid #fff;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(214,51,132,0.3);
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  canvas { display: block; }
+  .hud {
+    position: absolute; top: 12px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between;
+    font-weight: bold; font-size: 18px; color: #6b2d56;
+    text-shadow: 0 1px 2px #fff; pointer-events: none;
+  }
+  .overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.78); gap: 12px; text-align: center; padding: 20px;
+  }
+  .overlay h2 { margin: 0; color: #d63384; font-size: clamp(22px, 5vw, 36px); }
+  .overlay p { margin: 0; font-size: 16px; max-width: 360px; }
+  .btn {
+    border: none; background: #d63384; color: #fff; font-weight: bold;
+    font-size: 18px; padding: 12px 28px; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 5px 14px rgba(214,51,132,0.4); transition: transform .1s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .hidden { display: none !important; }
+  .hint { font-size: 13px; color: #8a4d74; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🦄 Prinzessin Pegasus – Spring über die Hindernisse! 🌸</h1>
+  <div class="stage" id="stage">
+    <canvas id="game" width="800" height="400"></canvas>
+    <div class="hud">
+      <div>Punkte: <span id="score">0</span></div>
+      <div>Rekord: <span id="best">0</span></div>
+    </div>
+    <div class="overlay" id="overlay">
+      <h2 id="ovTitle">Bereit zum Fliegen?</h2>
+      <p id="ovText">Tippe, klicke oder drücke die <b>Leertaste</b>, damit Pegasus springt.
+         Weiche den Hecken und Toren aus und sammle Punkte!</p>
+      <button class="btn" id="startBtn">▶ Los geht's!</button>
+      <div class="hint">Leertaste / Klick / Tippen = Springen</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const GROUND = H - 70;
+
+const scoreEl = document.getElementById("score");
+const bestEl  = document.getElementById("best");
+const overlay = document.getElementById("overlay");
+const ovTitle = document.getElementById("ovTitle");
+const ovText  = document.getElementById("ovText");
+const startBtn= document.getElementById("startBtn");
+
+let best = parseInt(localStorage.getItem("pegasusBest") || "0", 10);
+bestEl.textContent = best;
+
+/* ---------- Pegasus + Prinzessin als SVG-Bild ---------- */
+const heroSVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="0 0 200 170">
+  <!-- Flügel hinten (hellpink) -->
+  <g id="wing">
+    <path d="M70 70 Q20 30 8 70 Q40 64 50 90 Q22 78 18 104 Q52 92 62 110 Q44 110 40 130 Q78 104 92 86 Z"
+          fill="#ffb3d9" stroke="#ff86c2" stroke-width="2"/>
+  </g>
+  <!-- Pferdekörper (weiß) -->
+  <ellipse cx="105" cy="105" rx="62" ry="34" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <!-- Beine -->
+  <g fill="#ffffff" stroke="#e9d9e6" stroke-width="2">
+    <rect x="62" y="128" width="13" height="34" rx="5"/>
+    <rect x="88" y="132" width="13" height="34" rx="5"/>
+    <rect x="120" y="132" width="13" height="34" rx="5"/>
+    <rect x="146" y="128" width="13" height="34" rx="5"/>
+  </g>
+  <!-- Hals + Kopf -->
+  <path d="M150 92 Q176 78 174 56 Q172 40 158 40 Q150 56 148 70 Q140 80 138 96 Z" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <ellipse cx="166" cy="46" rx="14" ry="12" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <path d="M176 40 L184 30 L182 44 Z" fill="#ffffff" stroke="#e9d9e6" stroke-width="2"/>
+  <circle cx="170" cy="44" r="2.4" fill="#5a2a47"/>
+  <!-- Mähne (hellpink) -->
+  <path d="M150 44 Q156 30 150 22 Q160 30 158 44 Q166 32 162 24 Q172 36 166 50 Q158 58 150 62 Z" fill="#ffb3d9"/>
+  <!-- Schweif (hellpink) -->
+  <path d="M44 96 Q14 100 10 132 Q30 116 40 124 Q26 134 30 150 Q46 126 56 120 Z" fill="#ffb3d9"/>
+  <!-- Schwarzer Sattel -->
+  <path d="M82 80 Q105 66 128 80 L124 96 Q105 88 86 96 Z" fill="#1c1c1c"/>
+  <rect x="80" y="92" width="50" height="8" rx="3" fill="#1c1c1c"/>
+  <path d="M84 80 Q83 70 90 70" fill="none" stroke="#1c1c1c" stroke-width="4"/>
+
+  <!-- Prinzessin -->
+  <g>
+    <!-- hellblaues Kleid -->
+    <path d="M86 86 Q105 70 124 86 L132 116 Q105 126 78 116 Z" fill="#aee0ff" stroke="#7fc7ef" stroke-width="2"/>
+    <!-- Oberkörper -->
+    <path d="M96 70 Q105 60 114 70 L112 88 Q105 92 98 88 Z" fill="#bfe7ff" stroke="#7fc7ef" stroke-width="1.5"/>
+    <!-- langes, leicht gewelltes blondes Haar -->
+    <path d="M93 44 Q86 60 90 78 Q84 88 92 96 Q96 86 98 76 Q96 60 100 50 Z" fill="#ffe08a" stroke="#f4c95b" stroke-width="1.5"/>
+    <path d="M117 44 Q124 60 120 78 Q126 88 118 96 Q114 86 112 76 Q114 60 110 50 Z" fill="#ffe08a" stroke="#f4c95b" stroke-width="1.5"/>
+    <!-- Kopf -->
+    <circle cx="105" cy="48" r="13" fill="#ffe2c4" stroke="#f3c79e" stroke-width="1.5"/>
+    <!-- Pony / Haaransatz -->
+    <path d="M92 46 Q96 34 105 34 Q114 34 118 46 Q112 40 105 40 Q98 40 92 46 Z" fill="#ffe08a"/>
+    <!-- Augen + Lächeln -->
+    <circle cx="100" cy="48" r="1.8" fill="#5a3a2a"/>
+    <circle cx="110" cy="48" r="1.8" fill="#5a3a2a"/>
+    <path d="M101 54 Q105 57 109 54" fill="none" stroke="#c97b6b" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- kleine Krone -->
+    <path d="M97 34 L100 28 L105 33 L110 28 L113 34 Z" fill="#ffd54a" stroke="#e0a800" stroke-width="1"/>
+  </g>
+</svg>`;
+
+const heroImg = new Image();
+heroImg.src = "data:image/svg+xml;utf8," + encodeURIComponent(heroSVG);
+
+/* ---------- Spielzustand ---------- */
+const hero = { x: 120, y: GROUND, w: 150, h: 128, vy: 0, jumping: false };
+const GRAVITY = 0.7;
+const JUMP_V = -14;
+let obstacles = [];
+let clouds = [];
+let score = 0, speed = 6, frame = 0, running = false, gameOver = false;
+
+function reset(){
+  hero.y = GROUND; hero.vy = 0; hero.jumping = false;
+  obstacles = []; score = 0; speed = 6; frame = 0; gameOver = false;
+  clouds = [];
+  for(let i=0;i<4;i++) clouds.push({ x: Math.random()*W, y: 30+Math.random()*120, s: 0.4+Math.random()*0.6, r: 24+Math.random()*20 });
+}
+
+function jump(){
+  if(!running){ return; }
+  if(!hero.jumping){
+    hero.vy = JUMP_V;
+    hero.jumping = true;
+  }
+}
+
+function spawnObstacle(){
+  const types = [
+    { w: 34, h: 50, color: "#4caf6d", kind:"hedge" },   // Hecke
+    { w: 30, h: 78, color: "#4caf6d", kind:"tree" },     // hoher Busch
+    { w: 54, h: 60, color: "#c98a3a", kind:"gate" },     // Tor
+  ];
+  const t = types[Math.floor(Math.random()*types.length)];
+  obstacles.push({ x: W + 20, y: GROUND - t.h + 60, w: t.w, h: t.h, color: t.color, kind: t.kind, passed:false });
+}
+
+/* ---------- Zeichnen ---------- */
+function drawCloud(c){
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+  ctx.arc(c.x + c.r, c.y + 6, c.r*0.8, 0, Math.PI*2);
+  ctx.arc(c.x - c.r, c.y + 6, c.r*0.8, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawGround(){
+  ctx.fillStyle = "#8ed98a";
+  ctx.fillRect(0, GROUND + 50, W, H - GROUND);
+  ctx.fillStyle = "#7bc777";
+  for(let x = (-frame*speed) % 40; x < W; x += 40){
+    ctx.fillRect(x, GROUND + 50, 20, 8);
+  }
+}
+
+function drawObstacle(o){
+  if(o.kind === "gate"){
+    ctx.fillStyle = "#b07636";
+    ctx.fillRect(o.x, o.y, 8, o.h);
+    ctx.fillRect(o.x + o.w - 8, o.y, 8, o.h);
+    ctx.fillRect(o.x, o.y, o.w, 10);
+    ctx.fillStyle = "#ffd54a";
+    ctx.fillRect(o.x + o.w/2 - 4, o.y, 8, 8);
+  } else {
+    // Busch / Hecke
+    ctx.fillStyle = o.color;
+    ctx.beginPath();
+    ctx.arc(o.x + o.w/2, o.y + 14, o.w/2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillRect(o.x, o.y + 10, o.w, o.h - 10);
+    ctx.fillStyle = "#3d9457";
+    ctx.fillRect(o.x + o.w/2 - 3, o.y + 20, 6, o.h - 20);
+    // Blümchen
+    ctx.fillStyle = "#ff7bbf";
+    ctx.beginPath(); ctx.arc(o.x + o.w*0.3, o.y + 14, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(o.x + o.w*0.7, o.y + 22, 3, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function drawHero(){
+  const bob = hero.jumping ? 0 : Math.sin(frame*0.3)*3;
+  ctx.save();
+  ctx.translate(hero.x, hero.y - hero.h + bob);
+  if(heroImg.complete) ctx.drawImage(heroImg, 0, 0, hero.w, hero.h);
+  ctx.restore();
+}
+
+/* Trefferbox etwas kleiner als das Bild, fair fürs Spiel */
+function heroBox(){
+  return { x: hero.x + 30, y: hero.y - hero.h + 40, w: hero.w - 70, h: hero.h - 55 };
+}
+function hit(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/* ---------- Hauptschleife ---------- */
+function loop(){
+  if(!running) return;
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Wolken
+  clouds.forEach(c=>{
+    c.x -= c.s; if(c.x < -60){ c.x = W + 60; c.y = 30 + Math.random()*120; }
+    drawCloud(c);
+  });
+  drawGround();
+
+  // Physik Held
+  hero.vy += GRAVITY;
+  hero.y += hero.vy;
+  if(hero.y >= GROUND){ hero.y = GROUND; hero.vy = 0; hero.jumping = false; }
+
+  // Hindernisse
+  if(frame % Math.max(55, 90 - Math.floor(score/5)) === 0) spawnObstacle();
+  for(let i = obstacles.length - 1; i >= 0; i--){
+    const o = obstacles[i];
+    o.x -= speed;
+    drawObstacle(o);
+    if(!o.passed && o.x + o.w < hero.x){ o.passed = true; score++; scoreEl.textContent = score; speed += 0.12; }
+    if(hit(heroBox(), o)){ endGame(); }
+    if(o.x + o.w < -20) obstacles.splice(i, 1);
+  }
+
+  drawHero();
+  requestAnimationFrame(loop);
+}
+
+function startGame(){
+  reset();
+  running = true;
+  overlay.classList.add("hidden");
+  requestAnimationFrame(loop);
+}
+
+function endGame(){
+  running = false; gameOver = true;
+  if(score > best){ best = score; localStorage.setItem("pegasusBest", best); bestEl.textContent = best; }
+  ovTitle.textContent = "🌟 Geschafft: " + score + " Punkte!";
+  ovText.innerHTML = (score >= best ? "Neuer Rekord! 🎉<br>" : "") + "Tippe oder drücke die Leertaste für eine neue Runde.";
+  startBtn.textContent = "↻ Nochmal spielen";
+  overlay.classList.remove("hidden");
+}
+
+/* ---------- Steuerung ---------- */
+function handlePress(e){
+  if(e.type === "keydown" && e.code !== "Space" && e.code !== "ArrowUp") return;
+  if(e.type === "keydown") e.preventDefault();
+  if(!running){ startGame(); }
+  else { jump(); }
+}
+document.addEventListener("keydown", handlePress);
+document.getElementById("stage").addEventListener("mousedown", (e)=>{ if(e.target !== startBtn) handlePress(e); });
+document.getElementById("stage").addEventListener("touchstart", (e)=>{ e.preventDefault(); handlePress(e); }, {passive:false});
+startBtn.addEventListener("click", startGame);
+
+// Startbild zeichnen, sobald das Pferd geladen ist
+heroImg.onload = ()=>{ reset(); ctx.clearRect(0,0,W,H); clouds.forEach(drawCloud); drawGround(); drawHero(); };
+</script>
+</body>
+</html>
